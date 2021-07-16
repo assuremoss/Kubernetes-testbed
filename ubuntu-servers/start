@@ -1,0 +1,77 @@
+#!/bin/bash
+
+#
+# This script can be used to install dependencies needed to run the vagrant file and ansible playbooks
+# to spin up the Kubernetes cluster within an Ubuntu server. The server must run an Ubuntu distribution 
+# and the dependencies will be installed either for Virtualbox or kvm.
+# 
+
+# Define colors
+RED='\033[0;31m' # echo color
+GREEN='\033[0;32m'
+NC='\033[0m' # no Color
+
+# Make sure it's a Linux machine 
+if ! [ -f /etc/lsb-release ]; then
+    echo -e "${RED}This script must be run on a Ubuntu machine! Exit...${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}This script will install the dependencies for the Kubernetes cluster${NC}"
+
+# Update the system
+sudo apt update
+sudo apt -y upgrade
+
+# Install usefull packages 
+sudo apt install -y net-tools
+
+# Ask for VirtualBox or Libvirt installation 
+echo -e "${GREEN}Which hypervisor are you planning to use?${NC} \n
+1) VirtualBox \n
+2) libvirt \n
+enter a choice (1 or 2) \n"
+
+read hypervisor
+
+if ((hypervisor == 1)); then
+    # Skip for VirtualBox
+    echo ""
+
+elif ((hypervisor == 2)); then
+    # Package to check kvm-system compatibility
+    sudo apt install -y cpu-checker 
+
+    minimum=0
+    found=$(egrep -c '(vmx|svm)' /proc/cpuinfo)
+
+    if ((found > minimum)); then
+        echo -e "${GREEN}KVM is supported! Continue installation...${NC}"
+    else
+        echo -e "${RED}KVM is not supported! Exit...${NC}"
+        exit 1
+    fi
+
+    sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst
+
+else
+    echo -e "${RED}Invalid choice! Exit...${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Installing dependencies...${NC}"
+
+# Install Dependencies
+sudo apt install -y ansible 
+ansible-galaxy collection install community.kubernetes
+
+sudo apt install -y vagrant
+vagrant plugin install vagrant-scp
+
+
+# Add current user to libvirt and kvm groups
+sudo usermod -aG libvirt $USER
+sudo usermod -aG kvm $USER
+
+# Log-out to make changes effective
+su - ${USER}
