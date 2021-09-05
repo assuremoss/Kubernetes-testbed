@@ -90,7 +90,7 @@ vagrant ssh master-node-1
 sudo cat /etc/kubernetes/admin.conf > admin.conf
 ```
 
-Log out from the guest and run the following:
+Log out from the guest and run the following (user: vagrant, password: vagrant):
 ```bash
 scp vagrant@<master-node-ip>:admin.conf .
 kubectl --kubeconfig ./admin.conf get nodes
