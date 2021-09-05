@@ -15,34 +15,63 @@
       - gnupg-agent
       - software-properties-common
 
+# Install the Container Runtime Engine
+
+# Docker
   - name: Add an apt signing key for Docker
     apt_key:
       url: https://download.docker.com/linux/ubuntu/gpg
       state: present
+    when: c_eng == 1 
 
   - name: Add apt repository for stable version
     apt_repository:
-      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
       state: present
+    when: c_eng == 1 
 
-  - name: Install docker and its dependencies
+# Specify Docker version
+# To list the available versions in the repo run # apt-cache madison docker-ce
+  - name: Install docker and its dependecies
     apt: 
       name: "{{ packages }}"
       state: present
       update_cache: yes
     vars:
       packages:
-      - docker-ce 
-      - docker-ce-cli 
-      - containerd.io
-    notify:
-      - docker status
-
+      - docker-ce=5:20.10.7~3-0~ubuntu-xenial
+      - docker-ce-cli=5:20.10.7~3-0~ubuntu-xenial
+      - containerd.io=1.4.6-1
+    when: c_eng == 1
+      
   - name: Add vagrant user to docker group
     user:
       name: vagrant
       group: docker
-      
+    when: c_eng == 1
+  
+  - name: Set Docker cgroup driver to systemd
+    blockinfile:
+      path: /etc/docker/daemon.json
+      create: yes 
+      block: |
+        {
+          "exec-opts": ["native.cgroupdriver=systemd"],
+          "log-driver": "json-file",
+          "log-opts": {
+            "max-size": "100m"
+          },
+          "storage-driver": "overlay2"
+        }
+    when: c_eng == 1
+
+  - name: Delete Ansible marker in /etc/docker/daemon.json
+    lineinfile:
+      path: /etc/docker/daemon.json
+      regexp: "ANSIBLE" 
+      state: absent
+    when: c_eng == 1
+
   - name: Remove swapfile from /etc/fstab
     mount:
       name: "{{ item }}"
@@ -52,7 +81,7 @@
       - swap
       - none
 
-  - name: Disable swap
+  - name: Disable swap for the kubelet
     command: swapoff -a
     when: ansible_swaptotal_mb > 0
 
@@ -67,6 +96,8 @@
       state: present
       filename: kubernetes.list
 
+# Evetually, specify a specific version to be installed as following
+# kubelet=<version>
   - name: Install Kubernetes binaries
     apt: 
       name: "{{ packages }}"
@@ -74,15 +105,25 @@
       update_cache: yes
     vars:
       packages:
-        - kubelet 
-        - kubeadm 
-        - kubectl
+        - kubelet=1.22.1-00
+        - kubeadm=1.22.1-00
+        - kubectl=1.22.1-00
+  
+  - name: Avoid automatic updates for kuebelt, kubeadm, and kubectl
+    command: sudo apt-mark hold kubelet kubeadm kubectl
 
-  - name: Configure node ip
+  - name: Configure node ip for the kubelet
     lineinfile:
       path: /etc/default/kubelet
       line: KUBELET_EXTRA_ARGS=--node-ip={{ node_ip }}
       create: yes
+
+  - name: Restart Docker service
+    shell: |
+      systemctl enable docker
+      systemctl daemon-reload
+      systemctl restart docker
+    when: c_eng == 1
 
   - name: Restart kubelet
     service:
@@ -92,7 +133,7 @@
 
   - name: Copy the join command to server location
     copy:
-      src: join-command-dev
+      src: join-command
       dest: /tmp/join-command.sh
       mode: '0700'
 

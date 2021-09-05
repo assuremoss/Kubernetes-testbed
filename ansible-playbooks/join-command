@@ -1,0 +1,1 @@
+kubeadm join 172.16.3.10:6443 --token s64vxm.aon3mxa7mlb4d7af --discovery-token-ca-cert-hash sha256:2ce5dfd42fe85fcbe643de14dc88833d33b6abfa14c338b55d458edf6bec7a67 

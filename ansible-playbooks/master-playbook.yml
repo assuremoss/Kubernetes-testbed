@@ -1,0 +1,213 @@
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: Install packages that allow apt to be used over HTTPS
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: yes
+    vars:
+      packages:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+
+# Install the Container Runtime Engine
+
+# Docker
+  - name: Add an apt signing key for Docker
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+    when: c_eng == 1 
+
+  - name: Add apt repository for stable version
+    apt_repository:
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+      state: present
+    when: c_eng == 1 
+
+# Specify Docker version
+# To list the available versions in the repo run # apt-cache madison docker-ce
+  - name: Install docker and its dependecies
+    apt: 
+      name: "{{ packages }}"
+      state: present
+      update_cache: yes
+    vars:
+      packages:
+      - docker-ce=5:20.10.7~3-0~ubuntu-xenial
+      - docker-ce-cli=5:20.10.7~3-0~ubuntu-xenial
+      - containerd.io=1.4.6-1
+    when: c_eng == 1
+      
+  - name: Add vagrant user to docker group
+    user:
+      name: vagrant
+      group: docker
+    when: c_eng == 1
+  
+  - name: Set Docker cgroup driver to systemd
+    blockinfile:
+      path: /etc/docker/daemon.json
+      create: yes 
+      block: |
+        {
+          "exec-opts": ["native.cgroupdriver=systemd"],
+          "log-driver": "json-file",
+          "log-opts": {
+            "max-size": "100m"
+          },
+          "storage-driver": "overlay2"
+        }
+    when: c_eng == 1
+
+  - name: Delete Ansible marker in /etc/docker/daemon.json
+    lineinfile:
+      path: /etc/docker/daemon.json
+      regexp: "ANSIBLE" 
+      state: absent
+    when: c_eng == 1
+
+  - name: Remove swapfile from /etc/fstab
+    mount:
+      name: "{{ item }}"
+      fstype: swap
+      state: absent
+    with_items:
+      - swap
+      - none
+
+  - name: Disable swap for the kubelet
+    command: swapoff -a
+    when: ansible_swaptotal_mb > 0
+
+  - name: Add an apt signing key for Kubernetes
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+
+  - name: Adding apt repository for Kubernetes
+    apt_repository:
+      repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+      state: present
+      filename: kubernetes.list
+
+# Evetually, specify a specific version to be installed as following
+# kubelet=<version>
+  - name: Install Kubernetes binaries
+    apt: 
+      name: "{{ packages }}"
+      state: present
+      update_cache: yes
+    vars:
+      packages:
+        - kubelet=1.22.1-00
+        - kubeadm=1.22.1-00
+        - kubectl=1.22.1-00
+  
+  - name: Avoid automatic updates for kuebelt, kubeadm, and kubectl
+    command: sudo apt-mark hold kubelet kubeadm kubectl
+
+  - name: Configure node ip for the kubelet
+    lineinfile:
+      path: /etc/default/kubelet
+      line: KUBELET_EXTRA_ARGS=--node-ip={{ node_ip }}
+      create: yes
+
+  - name: Restart Docker service
+    shell: |
+      systemctl enable docker
+      systemctl daemon-reload
+      systemctl restart docker
+    when: c_eng == 1
+
+  - name: Restart kubelet
+    service:
+      name: kubelet
+      daemon_reload: yes
+      state: restarted
+
+# Kubernetes Master Node bootstrap with kubeadm
+  - name: Initialize the Kubernetes cluster using kubeadm
+    command: kubeadm init --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
+
+  - name: Setup kubeconfig for vagrant user
+    command: "{{ item }}"
+    with_items:
+     - mkdir -p /home/vagrant/.kube
+     - cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+     - chown vagrant:vagrant /home/vagrant/.kube/config
+
+# Install the CNI network plugin
+
+# Calico
+  - name: Install Calico CNI plugin
+    become: false
+    shell: |
+      kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+      kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+    when: cni == 1
+
+# Cilium
+  - name: Install Cilium CNI plugin
+    become: false
+    shell: |
+      kubectl create -f https://raw.githubusercontent.com/cilium/cilium/v1.9/install/kubernetes/quick-install.yaml
+    when: cni == 2
+
+# Weawe
+# IMPORTANT: only for Kubernetes v1.6+
+# Otherwise use: kubectl apply -f https://git.io/weave-kube
+  - name: Install Weave CNI plugin
+    become: false
+    shell: |
+      kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+    when: cni == 3
+
+# Flannel
+# IMPORTANT: only for Kubernetes v1.17+
+  - name: Install Flannel CNI plugin
+    become: false
+    shell: |
+      kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+    when: cni == 4
+
+  - name: Generate join command
+    command: kubeadm token create --print-join-command
+    register: join_command
+
+  - name: Copy join command to local file
+    become: false
+    local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="./join-command"
+
+  - name: Install Helm package manager (1/2)
+    get_url:
+      url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+      dest: /home/vagrant/get_helm.sh
+      mode: '0700'
+
+  - name: Install Helm package manager (2/2)
+    command: ./get_helm.sh
+
+  - name: Add default repository
+    community.kubernetes.helm_repository:
+      name: stable
+      repo_url: https://charts.helm.sh/stable
+
+  - name: Install open-iscsi and nfs-common
+    apt: 
+      name: "{{ packages }}"
+      state: present
+      update_cache: yes
+    vars:
+      packages:
+      - open-iscsi
+      - nfs-common
+
+  handlers:
+    - name: docker status
+      service: name=docker state=started

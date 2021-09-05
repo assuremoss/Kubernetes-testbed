@@ -1,0 +1,14 @@
+# ignore all logs
+*.log
+
+# Ignore Vagrant folder
+.vagrant
+
+# Ignore K8s Admin config file
+admin.conf
+
+# Ignore kubeadm files
+./ansible-playbooks/join-command
+
+# Ignore DS_store
+.DS_Store
