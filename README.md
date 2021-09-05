@@ -31,9 +31,20 @@ This testbed can be executed either on a Ubuntu or macOS machine. Windows is not
 
 ## Installation Issues
 
-#### VirtualBox’s “Kernel Driver Not Installed (rc=-1908)” Error on a Mac
+#### VirtualBox’s “Kernel Driver Not Installed (rc=-1908)” Error on MacOS
 
 Solution: https://www.howtogeek.com/658047/how-to-fix-virtualboxs-%E2%80%9Ckernel-driver-not-installed-rc-1908-error/
+
+Perhaps a notebook restart is also needed.
+
+#### Stderr: VBoxManage: error: Incompatible configuration requested. on Ubuntu
+
+Usually, this is a Virtualbox inner problem. A solution for this is to purge any Virtualbox installation and install again the latest versions. Following the commands for doing so:
+
+```bash
+sudo apt purge virtualbox
+sudo apt install -y virtualbox
+```
 
 Perhaps a notebook restart is also needed.
 
