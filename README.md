@@ -21,9 +21,9 @@ This testbed can be executed either on a Ubuntu or macOS machine. Windows is not
  - kubectl [For installation: https://kubernetes.io/docs/tasks/tools/]
  - Vagrant [For installation: https://www.vagrantup.com/downloads]
  - [Optional] Install a plugin to allow copying files from the Host OS to the Guest OS and viceversa: 
-       $ vagrant plugin install vagrant-vbguest
-       $ vagrant plugin install vagrant-scp
-       $ vagrant reload
+     - $ vagrant plugin install vagrant-vbguest
+     - $ vagrant plugin install vagrant-scp
+     - $ vagrant reload
  - Ansible [For installation: https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html]
  - Virtualbox [For installation: https://www.virtualbox.org/wiki/Downloads]
  - KVM [For installation: execute the ubuntu_dependencies file in this repository]
@@ -68,7 +68,7 @@ Once the installation is over, Kubernetes will be successfully installed.
 
 ## [Optional] Run kubectl commands from the host
 
-In order to avoid 
+In order to avoid ssh into the master node for running kubectl commands, we can set up kubectl on the host machine to run commands through the master node virtual machine. 
 
 #### Option 1.
 
