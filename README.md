@@ -1,32 +1,32 @@
 # Kubernetes playground platform
 
-The objective of this Kubernetes playground platform is to provide a production-like Kubernetes cluster that can be installed either on personal computers and servers. In particular, it allows to create clusters with a single master node, multi-master nodes, and an external etcd cluster, besides choosing the container runtime and CNI to be used within the cluster.
+The objective of this Kubernetes playground platform is to provide a production-like Kubernetes cluster that can be installed either on personal computers and servers. In particular, it allows creating clusters with a single master node, multi-master nodes, and an external etcd cluster, besides choosing the container runtime and CNI to be used within the cluster.
 
-The cluster is spinned up using Vagrant, Ansible, and kubeadm.
- • Vagrant is used to create the virtual (using Virtualbox or KVM) masters and workers nodes.
- • Ansible is used to automate a basic software configuration for each node (e.g. installing kubeadm).
- • kubeamd is finally used to bootstrap the Kubernetes nodes (i.e. installing the kube-api-server, kubelet, etc.)
+The cluster is spun up using Vagrant, Ansible, and kubeadm.
+ - Vagrant is used to create the virtual (using Virtualbox or KVM) masters and workers nodes.
+ - Ansible is used to automate a basic software configuration for each node (e.g. installing kubeadm).
+ - kubeamd is finally used to bootstrap the Kubernetes nodes (i.e. installing the kube-api-server, kubelet, etc.)
 
 
 ## Hardware Requirements
 
- • Master and Worker nodes: at least 2 GB of RAM and 2 CPUs (per machine). 
+ - Master and Worker nodes: at least 2 GB of RAM and 2 CPUs (per machine). 
    Check the full requirements here: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#before-you-begin
 
 
 ## Software Requirements
 
-This testbed can be executed either on a Ubuntu or MacOS machine. Windows is not currently supported (check out Minikube as an alternative). The following requirements are needed to run the testbed:
+This testbed can be executed either on a Ubuntu or macOS machine. Windows is not currently supported (check out Minikube as an alternative). The following requirements are needed to run the testbed:
 
- • kubectl [For installation: https://kubernetes.io/docs/tasks/tools/]
- • Vagrant [For installation: https://www.vagrantup.com/downloads]
- • [Optional] Install a plugin to allow copying files from the Host OS to the Guest OS and viceversa: 
+ - kubectl [For installation: https://kubernetes.io/docs/tasks/tools/]
+ - Vagrant [For installation: https://www.vagrantup.com/downloads]
+ - [Optional] Install a plugin to allow copying files from the Host OS to the Guest OS and viceversa: 
        $ vagrant plugin install vagrant-vbguest
        $ vagrant plugin install vagrant-scp
        $ vagrant reload
- • Ansible [For installation: https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html]
- • Virtualbox [For installation: https://www.virtualbox.org/wiki/Downloads]
- • KVM [For installation: execute the ubuntu_dependencies file in this repository]
+ - Ansible [For installation: https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html]
+ - Virtualbox [For installation: https://www.virtualbox.org/wiki/Downloads]
+ - KVM [For installation: execute the ubuntu_dependencies file in this repository]
 
 
 ## Installation Issues
@@ -40,7 +40,7 @@ Perhaps a notebook restart is also needed.
 
 ## Installation Overview
 
-The current settings allow you to set-up a Kubernetes cluster of 1 master node, and N worker nodes (they should be at maximum 9). Both the hardware requirements of the master and worker nodes can be customized, specifying the CPU, RAM, and network subnet for each virtual machine. Similarly, the Kubernetes and other components version can be specified in the Ansible provision files.
+The current settings allow you to set up a Kubernetes cluster of 1 master node, and N worker nodes (they should be maximum 9). Both the hardware requirements of the master and worker nodes can be customized, specifying the CPU, RAM, and network subnet for each virtual machine. Similarly, the Kubernetes and other components version can be specified in the Ansible provision files.
 
 At the moment, only the Docker container engine is (automatically) supported. In the future, we will add support for containerd and CRI-O container engines.
 
@@ -97,7 +97,7 @@ After this, you can run kubectl commands from the host.
 
 #### Option 2. ssh tunnel
 
-Specify the vagrant guest machine name (e.g. master-node-1) and the command to run (e.g. kubectl get nodes).
+Specify the Vagrant guest machine name (e.g. master-node-1) and the command to run (e.g. kubectl get nodes).
 
 ```bash
 vagrant ssh <guest_machine> -c '<command>'
@@ -119,7 +119,7 @@ source ~/.bash_profile
 
 ## Check Kubernetes Installation
 
-Finally, at the end of the installation we can check that our cluster is up and running as expected.
+Finally, at the end of the installation, we can check that our cluster is up and running as expected.
 
 ```bash
 kubectl get nodes
@@ -164,7 +164,7 @@ Now you can access the nginx application from the host os at this address: `http
 
 #### Clean-up
 
-To clean-up the previous deployment:
+To clean up the previous deployment:
 
 ```bash
 kubectl delete services nginx
@@ -177,7 +177,7 @@ Or, to delete every objects (not namespaces):
 kubectl delete all --all
 ```
 
-For more example (e.g. retrieving container logs), check out: https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md
+For more examples (e.g. retrieving container logs), check out: https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md
 
 
 ## Application Examples
@@ -188,5 +188,5 @@ The following are some application examples that can be deployed on the cluster:
  - https://pwittrock.github.io/docs/tutorials/stateless-application/guestbook/
  - Vulnerable deployments: Bust-A-Kube, kube-goat
 
-Other applications available on Github: TrainTicket, Spring PetClinic, Sock Shop, Movierecommendations, eShop, and Pig-gyMetrics.
+Other applications are available on Github: TrainTicket, Spring PetClinic, Sock Shop, Movierecommendations, eShop, and Pig-gyMetrics.
 
