@@ -110,7 +110,7 @@ alias kubectl="vagrant ssh <guest_machine> -c"
 
 After this, you can run kubectl commands from the host.
 
-To permanently save the alias, add the alias to the `~/.bash_profile` file and run:
+To permanently save the alias, add the alias to the `~/.bash_profile` file and run the following:
 
 ```bash
 source ~/.bash_profile
