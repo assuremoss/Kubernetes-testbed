@@ -39,8 +39,8 @@ Vagrant.configure("2") do |config|
         v.cpu_mode = "host-model"
         v.memory = 2048
         v.cpus = 2
-        v.management_network_name = 'vagrant-libvirt-custom'
-        v.management_network_address = '10.50.50.0/24'
+        v.management_network_name = 'libvirt-custom-network'
+        v.management_network_address = '10.10.10.0/24'
     end
     
     (1..N_M_NODES).each do |i|
