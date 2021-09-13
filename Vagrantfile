@@ -12,7 +12,7 @@ N_M_NODES = 1
 N_W_NODES = 1
 
 # Container RunTime Engine selection
-# Docker=1
+# Docker=1, containerd=2, CRI-O=3
 c_eng = 1
 
 # CNI Network Plugin selection

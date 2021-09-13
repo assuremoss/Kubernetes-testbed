@@ -31,11 +31,22 @@ This testbed can be executed either on a Ubuntu or macOS machine. Windows is not
 
 ## Installation Issues
 
-#### VirtualBox’s “Kernel Driver Not Installed (rc=-1908)” Error on MacOS
+#### VirtualBox on MacOS’s “” Error on MacOS
 
-Solution: https://www.howtogeek.com/658047/how-to-fix-virtualboxs-%E2%80%9Ckernel-driver-not-installed-rc-1908-error/
+ - Kernel Driver Not Installed (rc=-1908)
+   https://www.howtogeek.com/658047/how-to-fix-virtualboxs-%E2%80%9Ckernel-driver-not-installed-rc-1908-error/ 
+   Perhaps a notebook restart is also needed.
+ 
+ - VBoxManage: error: Failed to create the host-only adapter
+   ```bash
+   sudo "/Library/Application Support/VirtualBox/LaunchDaemons/VirtualBoxStartup.sh" restart
+   ```
 
-Perhaps a notebook restart is also needed.
+ - VBoxManage: error: VBoxNetAdpCtl: Error while adding new interface: failed to open /dev/vboxnetctl
+   ```bash
+   sudo "/Library/Application Support/VirtualBox/LaunchDaemons/VirtualBoxStartup.sh" restart
+   ```
+
 
 #### Stderr: VBoxManage: error: Incompatible configuration requested. on Ubuntu
 
@@ -49,13 +60,24 @@ sudo apt install -y virtualbox
 Perhaps a notebook restart is also needed.
 
 
+#### The connection to the server localhost:8080 was refused - did you specify the right host or port?
+
+Ssh into the cluster master-node and run the following commands:
+
+```bash
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+
 ## Installation Overview
 
 The current settings allow you to set up a Kubernetes cluster of 1 master node, and N worker nodes (they should be maximum 9). Both the hardware requirements of the master and worker nodes can be customized, specifying the CPU, RAM, and network subnet for each virtual machine. Similarly, the Kubernetes and other components version can be specified in the Ansible provision files.
 
-At the moment, only the Docker container engine is (automatically) supported. In the future, we will add support for containerd and CRI-O container engines.
+In the Vagrantfile, you can specify which container run-time engine you'd like to use. At the moment, you can choose among Docker, containerd, and CRI-O.
 
-Instead, four CNI network plugins are currently supported for automatic installation. Just specify the one you'd like to use in the Vagrantfile.
+Similarly, four CNI network plugins are currently supported for automatic installation. Just specify the one you'd like to use in the Vagrantfile.
 
 
 ## Kubernetes installation
@@ -189,6 +211,19 @@ kubectl delete all --all
 ```
 
 For more examples (e.g. retrieving container logs), check out: https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md
+
+
+## Useful add-ons
+
+#### Elastic Cloud on Kubernetes
+
+Installation:
+```bash
+kubectl create -f https://download.elastic.co/downloads/eck/1.7.1/crds.yaml
+kubectl apply -f https://download.elastic.co/downloads/eck/1.7.1/operator.yaml
+```
+
+Quickstart: https://www.elastic.co/guide/en/cloud-on-k8s/1.7/k8s-quickstart.html
 
 
 ## Application Examples
