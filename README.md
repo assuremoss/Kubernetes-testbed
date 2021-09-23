@@ -8,6 +8,17 @@ The cluster is spun up using Vagrant, Ansible, and kubeadm.
  - kubeamd is finally used to bootstrap the Kubernetes nodes (i.e. installing the kube-api-server, kubelet, etc.)
 
 
+## Supported Platforms
+
+The following OS are currently supported:
+
+ - Ubuntu Desktop OS with Virtualbox or libvirt (tested on Ubuntu 20.04 LTS).
+ - Ubuntu Server OS with libvirt (tested on Ubuntu 20.04 LTS).
+ - macOS with VirtualBox (tested on macOS Big Sur Version 11.5.2).
+
+If you wish to add more sopported platforms, open a new Github issue.
+
+
 ## Hardware Requirements
 
  - Master and Worker nodes: at least 2 GB of RAM and 2 CPUs (per machine). 
@@ -31,19 +42,15 @@ This testbed can be executed either on a Ubuntu or macOS machine. Windows is not
 
 ## Installation Overview
 
-The current settings allow you to set up a Kubernetes cluster of 1 master node, and N worker nodes (they should be maximum 9). Both the hardware requirements of the master and worker nodes can be customized, specifying the CPU, RAM, and network subnet for each virtual machine. Similarly, the Kubernetes and other components version can be specified in the Ansible provision files.
+The current settings allow you to set up a Kubernetes cluster of 1 or more master nodes, and N worker nodes (they should be maximum 9). Both the hardware requirements of the master and worker nodes can be customized, specifying the CPU, RAM, and network subnets for each virtual machine. Similarly, the Kubernetes and other components version can be specified in the Ansible provision files.
 
-In the Vagrantfile, you can specify which container run-time engine you'd like to use. At the moment, you can choose among Docker, containerd, and CRI-O.
+In the Vagrantfile, you can specify which container run-time engine you'd like to use. At the moment, you can choose between Docker, containerd, and CRI-O.
 
-Similarly, four CNI network plugins are currently supported for automatic installation. Just specify the one you'd like to use in the Vagrantfile.
+Similarly, four CNI network plugins are currently supported for automatic installation. At the moment, you can choose between Calico, Cilium, Weave, and Flannel.
 
+The following is an overview of the 3 cluster setups that is possible to create:
 
-
-
-INSERT FIGURE
-
-
-
+![alt text](https://github.com/assuremoss/Kubernetes-testbed/blob/main/testbed.png?raw=true)
 
 
 ## Kubernetes installation (single-master node)
@@ -52,7 +59,7 @@ The following are the steps needed to deploy a single-master node Kubernetes clu
 
 #### 1. Customize the Vagrantfile
 
-Within the Vagrantfile, in order, you can specify the number of worker nodes, and the CNI network plugin to use (Calico, Cilium, Weave, or Flannel). It is recommended not to change the Ubuntu server image.
+Within the Vagrantfile, in order, you can specify the number of worker nodes (for single-master node, ignore the N_M_NODES and lb_ip fields), and the CNI network plugin to use (Calico, Cilium, Weave, or Flannel). It is recommended not to change the Ubuntu server image.
 
 #### 2. Spin-up the cluster
 
@@ -71,17 +78,9 @@ The following are the steps needed to deploy a a multi-master nodes Kubernetes c
 
 #### 1. Customize the Vagrantfile
 
-Within the Vagrantfile, in order, you can specify the number of master and worker nodes, and the CNI network plugin to use (Calico, Cilium, Weave, or Flannel). It is recommended not to change the Ubuntu server image.
+Within the Vagrantfile, in order, you can specify the number of master nodes, the master nodes load balancer IP (if you are using an external load balancer, specify the IP address in the lb_ip field), the number of worker nodes, and the CNI network plugin to use (Calico, Cilium, Weave, or Flannel are currently supported). It is recommended not to change the Ubuntu server image.
 
-TODO
-
-
-
-
-
-
-
-
+By default, if no external Load Balancer IP Address is provided, another machine is spun up with Nginx balancing the requests to the API servers on the master nodes.
 
 
 #### 2. Spin-up the cluster
