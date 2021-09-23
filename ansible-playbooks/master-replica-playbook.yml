@@ -209,7 +209,7 @@
         - kubelet=1.20.0-00
         - kubeadm=1.20.0-00
         - kubectl=1.20.0-00
-
+  
   - name: Avoid automatic updates for kuebelt, kubeadm, and kubectl
     command: sudo apt-mark hold kubelet kubeadm kubectl
 
@@ -218,7 +218,7 @@
       path: /etc/default/kubelet
       line: KUBELET_EXTRA_ARGS=--node-ip={{ node_ip }}
       create: yes
-  
+
 # Install etcd CLI utility
   - name: Install etcdctl
     apt: 
@@ -262,37 +262,32 @@
       daemon_reload: yes
       state: restarted
 
-### Single-master cluster ###
-# Kubernetes Master node bootstrap with kubeadm and Docker
-  - name: Initialize the Kubernetes cluster using kubeadm and Docker
-    command: kubeadm init --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
-    when: c_eng == 1 and n_m_nodes == 1
+  - name: Copy the join command to server location
+    copy:
+      src: join-command
+      dest: /tmp/join-command
+      mode: '0700'
 
-# Kubernetes Master node bootstrap with kubeadm and containerd
-  - name: Initialize the Kubernetes cluster using kubeadm and containerd
-    command: kubeadm init --cri-socket=/run/containerd/containerd.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
-    when: c_eng == 2 and n_m_nodes == 1
+  - name: Copy the master join command to server location
+    copy:
+      src: join-command-master
+      dest: /tmp/join-command-master
+      mode: '0700'
 
-# Kubernetes Master node bootstrap with kubeadm and CRI-O
-  - name: Initialize the Kubernetes cluster using kubeadm and CRI-O
-    command: kubeadm init --cri-socket=/var/run/crio/crio.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
-    when: c_eng == 3 and n_m_nodes == 1
+  - name: Change join command to join the master node
+    shell: echo $(cat /tmp/join-command) --control-plane --certificate-key $(cut -c225-288 /tmp/join-command-master) --apiserver-advertise-address {{ node_ip }} > /tmp/join-command.sh
+    when: c_eng == 1
 
-### Multi-master cluster ###
-# Kubernetes Master nodes bootstrap with kubeadm and Docker
-  - name: Initialize the Kubernetes cluster using kubeadm and Docker
-    command: kubeadm init --control-plane-endpoint {{ lb_ip }} --upload-certs --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
-    when: c_eng == 1 and n_m_nodes > 1
+  - name: Change join command to join the master node
+    shell: echo $(cat /tmp/join-command) --control-plane --certificate-key $(cut -c225-288 /tmp/join-command-master) --apiserver-advertise-address {{ node_ip }} --cri-socket=/run/containerd/containerd.sock > /tmp/join-command.sh
+    when: c_eng == 2
 
-# Kubernetes Master nodes bootstrap with kubeadm and containerd
-  - name: Initialize the Kubernetes cluster using kubeadm and containerd
-    command: kubeadm init --control-plane-endpoint {{ lb_ip }} --upload-certs --cri-socket=/run/containerd/containerd.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
-    when: c_eng == 2 and n_m_nodes > 1
+  - name: Change join command to join the master node
+    shell: echo $(cat /tmp/join-command) --control-plane --certificate-key $(cut -c225-288 /tmp/join-command-master) --apiserver-advertise-address {{ node_ip }} --cri-socket=/var/run/crio/crio.sock > /tmp/join-command.sh
+    when: c_eng == 3
 
-# Kubernetes Master nodes bootstrap with kubeadm and CRI-O
-  - name: Initialize the Kubernetes cluster using kubeadm and CRI-O
-    command: kubeadm init --control-plane-endpoint {{ lb_ip }} --upload-certs --cri-socket=/var/run/crio/crio.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
-    when: c_eng == 3 and n_m_nodes > 1
+  - name: Multi-master node join command
+    command: sh /tmp/join-command.sh
 
   - name: Setup kubeconfig for vagrant user
     command: "{{ item }}"
@@ -300,69 +295,6 @@
      - mkdir -p /home/vagrant/.kube
      - cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
      - chown vagrant:vagrant /home/vagrant/.kube/config
-
-# Allow pods to run on the master node in case there are no worker nodes
-  - name: Allow pods to run on the master node
-    command: kubectl taint nodes --all node-role.kubernetes.io/master-
-    when: n_w_nodes == 0
-
-# Install the CNI network plugin
-
-# Calico
-  - name: Install Calico CNI plugin
-    become: false
-    retries: 3  
-    shell: |
-      kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
-      kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
-    when: cni == 1
-
-# Cilium
-  - name: Install Cilium CNI plugin
-    become: false
-    retries: 3  
-    shell: |
-      kubectl create -f https://raw.githubusercontent.com/cilium/cilium/v1.9/install/kubernetes/quick-install.yaml
-    when: cni == 2
-
-# Weawe
-# IMPORTANT: only for Kubernetes v1.6+
-# Otherwise use: kubectl apply -f https://git.io/weave-kube
-  - name: Install Weave CNI plugin
-    become: false
-    retries: 3  
-    shell: |
-      kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
-    when: cni == 3
-
-# Flannel
-# IMPORTANT: only for Kubernetes v1.17+
-  - name: Install Flannel CNI plugin
-    become: false
-    retries: 3  
-    shell: |
-      kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-    when: cni == 4
-
-# Generate join command for worker nodes
-  - name: Generate join command
-    command: kubeadm token create --print-join-command
-    register: join_command
-
-  - name: Copy join command to local file
-    become: false
-    local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="./join-command"
-
-# Generate join command for the other master nodes
-  - name: Generate join-command for other master nodes
-    command: kubeadm init phase upload-certs --upload-certs
-    register: join_command_master
-    when: n_m_nodes > 1
-
-  - name: Copy join-command for other master nodes
-    become: false
-    local_action: copy content="{{ join_command_master }}" dest="./join-command-master"
-    when: n_m_nodes > 1
 
   - name: Install Helm package manager (1/2)
     get_url:

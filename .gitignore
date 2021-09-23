@@ -9,6 +9,7 @@ admin.conf
 
 # Ignore kubeadm files
 ansible-playbooks/join-command
+ansible-playbooks/join-command-master
 
 # Ignore DS_store
 .DS_Store

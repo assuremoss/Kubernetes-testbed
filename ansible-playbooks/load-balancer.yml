@@ -1,0 +1,99 @@
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: Install packages that allow apt to be used over HTTPS
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: yes
+    vars:
+      packages:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+
+# Install nginx
+  - name: Install nginx for load balancing
+    apt: 
+      name: nginx
+      update_cache: yes
+      state: latest
+
+# Docker
+  - name: Add an apt signing key for Docker
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add apt repository for stable version
+    apt_repository:
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+      state: present
+
+# Specify Docker version
+# To list the available versions in the repo run # apt-cache madison docker-ce
+  - name: Install docker and its dependecies
+    apt: 
+      name: "{{ packages }}"
+      state: present
+      update_cache: yes
+    vars:
+      packages:
+      - docker-ce=5:20.10.7~3-0~ubuntu-xenial
+      - docker-ce-cli=5:20.10.7~3-0~ubuntu-xenial
+      - containerd.io=1.4.6-1
+      
+  - name: Add vagrant user to docker group
+    user:
+      name: vagrant
+      group: docker
+  
+  - name: Set Docker cgroup driver to systemd
+    blockinfile:
+      path: /etc/docker/daemon.json
+      create: yes 
+      block: |
+        {
+          "exec-opts": ["native.cgroupdriver=systemd"],
+          "log-driver": "json-file",
+          "log-opts": {
+            "max-size": "100m"
+          },
+          "storage-driver": "overlay2"
+        }
+
+  - name: Delete Ansible marker in /etc/docker/daemon.json
+    lineinfile:
+      path: /etc/docker/daemon.json
+      regexp: "ANSIBLE" 
+      state: absent
+
+  - name: Restart Docker service
+    shell: |
+      systemctl enable docker
+      systemctl daemon-reload
+      systemctl restart docker
+
+  - name: Create the nginx directory
+    ansible.builtin.file:
+      path: /etc/nginx/
+      state: directory
+
+  - name: Copy the nginx configuration file
+    copy:
+      src: nginx.conf
+      dest: /etc/nginx/nginx.conf
+
+  - name: Start the nginx service
+    service:
+      name: nginx
+      state: started
+
+  - name: Fire up the load balancer
+    shell: docker run --name proxy -v /etc/nginx/nginx.conf:/etc/nginx/nginx.conf:ro -p 6443:6443 -d nginx
+
+
+

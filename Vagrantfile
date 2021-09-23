@@ -8,6 +8,10 @@ IMAGE_NAME = "generic/ubuntu2004"
 # Number of master nodes 
 N_M_NODES = 1
 
+# For multi-master nodes clusters, a Load Balancer is needed
+# If using an external load balancer, specify the IP here
+lb_ip = 0
+
 # Number of workers nodes (should be at maximum 9)
 N_W_NODES = 1
 
@@ -42,16 +46,60 @@ Vagrant.configure("2") do |config|
         v.management_network_name = 'libvirt-custom-network'
         v.management_network_address = '10.10.10.0/24'
     end
-    
-    (1..N_M_NODES).each do |i|
+
+    # Setup a nginx load balancer for HA cluster (multi-master nodes)
+    if N_M_NODES > 1 and lb_ip == 0 then
+        lb_ip = 172.16.3.5
+
+        config.vm.define "load-balancer" do |lb|
+            lb.vm.box = IMAGE_NAME
+            lb.vm.network "private_network", ip: "172.16.3.5"
+            lb.vm.hostname = "load-balancer"
+            lb.vm.provision "ansible" do |ansible|
+                ansible.compatibility_mode = "2.0"
+                ansible.playbook = "ansible-playbooks/load-balancer.yml"
+                ansible.extra_vars = {
+                    hostname: "load-balancer",
+                    node_ip: "172.16.3.5",
+                    ansible_python_interpreter:"/usr/bin/python3"
+                }
+            end
+        end
+    end
+
+    config.vm.define "master-node-1" do |master|
+        master.vm.box = IMAGE_NAME
+        master.vm.network "private_network", ip: "172.16.3.10"
+        master.vm.hostname = "master-node-1"
+        master.vm.provision "ansible" do |ansible|
+            ansible.compatibility_mode = "2.0"
+            ansible.playbook = "ansible-playbooks/master-playbook.yml"
+            ansible.extra_vars = {
+                n_m_nodes: N_M_NODES,
+                lb_ip = lb_ip,
+                n_w_nodes: N_W_NODES,
+                hostname: "master-node-1",
+                node_ip: "172.16.3.10",
+                c_eng: c_eng,
+                cni: cni,
+                ansible_python_interpreter:"/usr/bin/python3"
+            }
+        end
+    end
+
+    # For multi-master nodes clusters, we provide a different ansible playbook to the
+    # master node replicas.
+    (2..N_M_NODES).each do |i|
         config.vm.define "master-node-#{i}" do |master|
             master.vm.box = IMAGE_NAME
             master.vm.network "private_network", ip: "172.16.3.#{i + 9}"
             master.vm.hostname = "master-node-#{i}"
             master.vm.provision "ansible" do |ansible|
                 ansible.compatibility_mode = "2.0"
-                ansible.playbook = "ansible-playbooks/master-playbook.yml"
+                ansible.playbook = "ansible-playbooks/master-replica-playbook.yml"
                 ansible.extra_vars = {
+                    n_m_nodes: N_M_NODES,
+                    n_w_nodes: N_W_NODES,
                     hostname: "master-node-#{i}",
                     node_ip: "172.16.3.#{i + 9}",
                     c_eng: c_eng,

@@ -29,48 +29,6 @@ This testbed can be executed either on a Ubuntu or macOS machine. Windows is not
  - KVM [For installation: execute the ubuntu_dependencies file in this repository]
 
 
-## Installation Issues
-
-#### VirtualBox on MacOS’s “” Error on MacOS
-
- - Kernel Driver Not Installed (rc=-1908)
-   https://www.howtogeek.com/658047/how-to-fix-virtualboxs-%E2%80%9Ckernel-driver-not-installed-rc-1908-error/ 
-   Perhaps a notebook restart is also needed.
- 
- - VBoxManage: error: Failed to create the host-only adapter
-   ```bash
-   sudo "/Library/Application Support/VirtualBox/LaunchDaemons/VirtualBoxStartup.sh" restart
-   ```
-
- - VBoxManage: error: VBoxNetAdpCtl: Error while adding new interface: failed to open /dev/vboxnetctl
-   ```bash
-   sudo "/Library/Application Support/VirtualBox/LaunchDaemons/VirtualBoxStartup.sh" restart
-   ```
-
-
-#### Stderr: VBoxManage: error: Incompatible configuration requested. on Ubuntu
-
-Usually, this is a Virtualbox inner problem. A solution for this is to purge any Virtualbox installation and install again the latest versions. Following the commands for doing so:
-
-```bash
-sudo apt purge virtualbox
-sudo apt install -y virtualbox
-```
-
-Perhaps a notebook restart is also needed.
-
-
-#### The connection to the server localhost:8080 was refused - did you specify the right host or port?
-
-Ssh into the cluster master-node and run the following commands:
-
-```bash
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-```
-
-
 ## Installation Overview
 
 The current settings allow you to set up a Kubernetes cluster of 1 master node, and N worker nodes (they should be maximum 9). Both the hardware requirements of the master and worker nodes can be customized, specifying the CPU, RAM, and network subnet for each virtual machine. Similarly, the Kubernetes and other components version can be specified in the Ansible provision files.
@@ -80,13 +38,51 @@ In the Vagrantfile, you can specify which container run-time engine you'd like t
 Similarly, four CNI network plugins are currently supported for automatic installation. Just specify the one you'd like to use in the Vagrantfile.
 
 
-## Kubernetes installation
 
-The following are the steps needed to deploy the Kubernetes cluster.
+
+INSERT FIGURE
+
+
+
+
+
+## Kubernetes installation (single-master node)
+
+The following are the steps needed to deploy a single-master node Kubernetes cluster (for a multi-master nodes cluster, see next section).
 
 #### 1. Customize the Vagrantfile
 
 Within the Vagrantfile, in order, you can specify the number of worker nodes, and the CNI network plugin to use (Calico, Cilium, Weave, or Flannel). It is recommended not to change the Ubuntu server image.
+
+#### 2. Spin-up the cluster
+
+From the Kubernetes testbed folder, run the following: 
+
+```bash
+vagrant up --provider virtualbox/libvirt 
+```
+
+Once the installation is over, Kubernetes will be successfully installed. 
+
+
+## Kubernetes installation (multi-master nodes)
+
+The following are the steps needed to deploy a a multi-master nodes Kubernetes cluster.
+
+#### 1. Customize the Vagrantfile
+
+Within the Vagrantfile, in order, you can specify the number of master and worker nodes, and the CNI network plugin to use (Calico, Cilium, Weave, or Flannel). It is recommended not to change the Ubuntu server image.
+
+TODO
+
+
+
+
+
+
+
+
+
 
 #### 2. Spin-up the cluster
 
@@ -229,6 +225,8 @@ Quickstart: https://www.elastic.co/guide/en/cloud-on-k8s/1.7/k8s-quickstart.html
 ## Application Examples
 
 The following are some application examples that can be deployed on the cluster: 
+ - K8s documentation example (Redis, etc.)
+ - https://github.com/ferozsalam/k8s-audit-log-inspector
  - https://github.com/stefanprodan/podinfo
  - https://github.com/kubernetes/examples
  - https://pwittrock.github.io/docs/tutorials/stateless-application/guestbook/
@@ -236,3 +234,76 @@ The following are some application examples that can be deployed on the cluster:
 
 Other applications are available on Github: TrainTicket, Spring PetClinic, Sock Shop, Movierecommendations, eShop, and Pig-gyMetrics.
 
+
+## Installation Issues
+
+
+### Add-ons installation failures
+ 
+During the cluster bootstrap, some add-ons installation may fail. In general, it is best to manually finish the installation of the component, if not too many commands are left, or simply destroy the machine a create it from scratch again. The following two are installation error examples:
+
+ - `Unable to connect to the server: dial tcp: lookup docs.projectcalico.org on 127.0.0.53:53: server misbehaving`: In such a case, it is best to "destroy" the node (`vagrant destroy master-node-N`), and start the installation again from scratch (`vagrant up master-node-N`).
+
+ - `Could not resolve host: get.helm.sh`: If the Helm installation fails, you can ssh into the master node (`vagrant ssh master-node-N`) and manually finish the installation (e.g. by running `wget https://.../scripts/get-helm-3` and `./get_helm.sh`). Check the Ansible file for the needed commands.
+
+
+#### VirtualBox on MacOS’s “” Error on MacOS
+
+ - Kernel Driver Not Installed (rc=-1908)
+   https://www.howtogeek.com/658047/how-to-fix-virtualboxs-%E2%80%9Ckernel-driver-not-installed-rc-1908-error/ 
+   Perhaps a notebook restart is also needed.
+ 
+ - VBoxManage: error: Failed to create the host-only adapter
+   ```bash
+   sudo "/Library/Application Support/VirtualBox/LaunchDaemons/VirtualBoxStartup.sh" restart
+   ```
+
+ - VBoxManage: error: VBoxNetAdpCtl: Error while adding new interface: failed to open /dev/vboxnetctl
+   ```bash
+   sudo "/Library/Application Support/VirtualBox/LaunchDaemons/VirtualBoxStartup.sh" restart
+   ```
+
+
+#### Stderr: VBoxManage: error: Incompatible configuration requested. on Ubuntu
+
+Usually, this is a Virtualbox inner problem. A solution for this is to purge any Virtualbox installation and install again the latest versions. Following the commands for doing so:
+
+```bash
+sudo apt purge virtualbox
+sudo apt install -y virtualbox
+```
+
+Perhaps a notebook restart is also needed.
+
+
+#### The connection to the server <host>:8080 was refused - did you specify the right host or port?
+
+Ssh into the cluster master-node and run the following commands:
+
+```bash
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+#### The connection to the server <host>:6443 was refused - did you specify the right host or port?
+
+Ssh into the cluster master-node and run the following commands:
+
+```bash
+sudo -i
+swapoff -a
+exit
+strace -eopenat kubectl version
+```
+
+
+# References
+
+ [1] https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/
+
+ [2] https://medium.com/@lizrice/kubernetes-in-vagrant-with-kubeadm-21979ded6c63
+
+ [3] https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
+
+ [4] https://octetz.com/docs/2019/2019-03-26-ha-control-plane-kubeadm/
