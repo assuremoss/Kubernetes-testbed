@@ -16,7 +16,7 @@ The following OS are currently supported:
  - Ubuntu Server OS with libvirt (tested on Ubuntu 20.04 LTS).
  - macOS with VirtualBox (tested on macOS Big Sur Version 11.5.2).
 
-If you wish to add more sopported platforms, open a new Github issue.
+If you wish to add more sopported platforms, open a Github issue.
 
 
 ## Hardware Requirements
@@ -59,7 +59,7 @@ The following are the steps needed to deploy a single-master node Kubernetes clu
 
 #### 1. Customize the Vagrantfile
 
-Within the Vagrantfile, in order, you can specify the number of worker nodes (for single-master node, ignore the N_M_NODES and lb_ip fields), and the CNI network plugin to use (Calico, Cilium, Weave, or Flannel). It is recommended not to change the Ubuntu server image.
+Within the Vagrantfile, in order, you can specify the number of worker nodes (for single-master node, ignore the N_M_NODES field), and the CNI network plugin to use (Calico, Cilium, Weave, or Flannel). It is recommended not to change the Ubuntu server image.
 
 #### 2. Spin-up the cluster
 
@@ -78,12 +78,17 @@ The following are the steps needed to deploy a a multi-master nodes Kubernetes c
 
 #### 1. Customize the Vagrantfile
 
-Within the Vagrantfile, in order, you can specify the number of master nodes, the master nodes load balancer IP (if you are using an external load balancer, specify the IP address in the lb_ip field), the number of worker nodes, and the CNI network plugin to use (Calico, Cilium, Weave, or Flannel are currently supported). It is recommended not to change the Ubuntu server image.
-
-By default, if no external Load Balancer IP Address is provided, another machine is spun up with Nginx balancing the requests to the API servers on the master nodes.
+Within the Vagrantfile, in order, you can specify the number of master nodes and worker nodes, and the CNI network plugin to use (Calico, Cilium, Weave, or Flannel are currently supported). It is recommended not to change the Ubuntu server image.
 
 
-#### 2. Spin-up the cluster
+#### 2. Customize the nginx configuration file
+
+For the nginx load balancer, you need to manually specify the master nodes IPs in the nginx configuration file, which is the `ansible-playbooks/nginx.conf` file.
+
+For each master node, insert a line like `server <master-node-N-IP>:6443;`.
+
+
+#### 3. Spin-up the cluster
 
 From the Kubernetes testbed folder, run the following: 
 
@@ -109,7 +114,7 @@ sudo cat /etc/kubernetes/admin.conf > admin.conf
 
 Log out from the guest and run the following (user: vagrant, password: vagrant):
 ```bash
-scp vagrant@<master-node-ip>:admin.conf .
+scp -o StrictHostKeyChecking=no vagrant@<master-node-ip>:admin.conf .
 kubectl --kubeconfig ./admin.conf get nodes
 ```
 
@@ -210,6 +215,16 @@ For more examples (e.g. retrieving container logs), check out: https://github.co
 
 ## Useful add-ons
 
+#### Kubernetes Dashboard
+
+Installation:
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.3.1/aio/deploy/recommended.yaml
+```
+
+Hereby you can find the steps needed to access the dashboard from the host: https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md
+
+
 #### Elastic Cloud on Kubernetes
 
 Installation:
@@ -224,7 +239,6 @@ Quickstart: https://www.elastic.co/guide/en/cloud-on-k8s/1.7/k8s-quickstart.html
 ## Application Examples
 
 The following are some application examples that can be deployed on the cluster: 
- - K8s documentation example (Redis, etc.)
  - https://github.com/ferozsalam/k8s-audit-log-inspector
  - https://github.com/stefanprodan/podinfo
  - https://github.com/kubernetes/examples
@@ -294,6 +308,20 @@ sudo -i
 swapoff -a
 exit
 strace -eopenat kubectl version
+```
+
+#### Error from server (InternalError): an error on the server ("") has prevented the request from succeeding
+
+This error may be caused by several problems (e.g. expired token or a crashed master node). There is no bullet-proof solution for this, therefore it is better to dump information form the cluster and investigate the problem.
+
+Some useful commands:
+
+```bash
+kubectl version --v=7
+
+kubectl cluster-info dump
+
+nc -v localhost 6443
 ```
 
 

@@ -281,17 +281,17 @@
 ### Multi-master cluster ###
 # Kubernetes Master nodes bootstrap with kubeadm and Docker
   - name: Initialize the Kubernetes cluster using kubeadm and Docker
-    command: kubeadm init --control-plane-endpoint {{ lb_ip }} --upload-certs --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
+    command: kubeadm init --control-plane-endpoint 172.16.3.5 --upload-certs --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
     when: c_eng == 1 and n_m_nodes > 1
 
 # Kubernetes Master nodes bootstrap with kubeadm and containerd
   - name: Initialize the Kubernetes cluster using kubeadm and containerd
-    command: kubeadm init --control-plane-endpoint {{ lb_ip }} --upload-certs --cri-socket=/run/containerd/containerd.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
+    command: kubeadm init --control-plane-endpoint 172.16.3.5 --upload-certs --cri-socket=/run/containerd/containerd.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
     when: c_eng == 2 and n_m_nodes > 1
 
 # Kubernetes Master nodes bootstrap with kubeadm and CRI-O
   - name: Initialize the Kubernetes cluster using kubeadm and CRI-O
-    command: kubeadm init --control-plane-endpoint {{ lb_ip }} --upload-certs --cri-socket=/var/run/crio/crio.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
+    command: kubeadm init --control-plane-endpoint 172.16.3.5 --upload-certs --cri-socket=/var/run/crio/crio.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
     when: c_eng == 3 and n_m_nodes > 1
 
   - name: Setup kubeconfig for vagrant user

@@ -8,10 +8,6 @@ IMAGE_NAME = "generic/ubuntu2004"
 # Number of master nodes 
 N_M_NODES = 1
 
-# For multi-master nodes clusters, a Load Balancer is needed
-# If using an external load balancer, specify the IP here
-lb_ip = 0
-
 # Number of workers nodes (should be at maximum 9)
 N_W_NODES = 1
 
@@ -48,9 +44,7 @@ Vagrant.configure("2") do |config|
     end
 
     # Setup a nginx load balancer for HA cluster (multi-master nodes)
-    if N_M_NODES > 1 and lb_ip == 0 then
-        lb_ip = 172.16.3.5
-
+    if N_M_NODES > 1 then
         config.vm.define "load-balancer" do |lb|
             lb.vm.box = IMAGE_NAME
             lb.vm.network "private_network", ip: "172.16.3.5"
@@ -76,7 +70,6 @@ Vagrant.configure("2") do |config|
             ansible.playbook = "ansible-playbooks/master-playbook.yml"
             ansible.extra_vars = {
                 n_m_nodes: N_M_NODES,
-                lb_ip = lb_ip,
                 n_w_nodes: N_W_NODES,
                 hostname: "master-node-1",
                 node_ip: "172.16.3.10",
