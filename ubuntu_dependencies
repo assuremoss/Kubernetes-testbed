@@ -12,7 +12,7 @@ GREEN='\033[0;32m'
 NC='\033[0m' # no Color
 
 # Make sure it's a Linux machine 
-if ! (( -f /etc/lsb-release )); then
+if ! [ -f /etc/lsb-release ]; then
     echo -e "${RED}This script must be run on a Ubuntu machine! Exit...${NC}"
     exit 1
 fi
@@ -74,7 +74,7 @@ read testbed
 if [ $testbed == "y" ]; then
     git clone https://github.com/assuremoss/Kubernetes-testbed.git
     cd Kubernetes-testbed
-    
+fi
 
 # Ask whether to initialize the Kubernetes cluster
 echo -e "${GREEN}Would you like to initialize the Kubernetes cluster?${NC} \n
@@ -102,6 +102,7 @@ if [ $cluster == "y" ]; then
 
     echo -e "kubectl get nodes"
     kubectl cluster-info
+fi
 
 
 # Install Dependencies
