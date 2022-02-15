@@ -34,18 +34,18 @@ enter a choice (1 or 2) \n"
 
 read hypervisor
 
-if ((hypervisor == 1)); then
+if [ $hypervisor == 1 ]; then
     # Skip for VirtualBox
     echo ""
 
-elif ((hypervisor == 2)); then
+elif [ $hypervisor == 2 ]; then
     # Package to check kvm-system compatibility
     sudo apt install -y cpu-checker 
 
     minimum=0
     found=$(egrep -c '(vmx|svm)' /proc/cpuinfo)
 
-    if ((found > minimum)); then
+    if [ $found > $minimum ]; then
         echo -e "${GREEN}KVM is supported! Continue installation...${NC}"
     else
         echo -e "${RED}KVM is not supported! Exit...${NC}"
@@ -60,42 +60,6 @@ else
 fi
 
 echo -e "${GREEN}Installing dependencies...${NC}"
-
-
-# Ask whether to download the Testbed's repository
-echo -e "${GREEN}Would you like to download the Testbed's repository?${NC} \n
-1) yes \n
-2) no \n
-enter a choice (y or n) \n"
-
-read testbed
-
-if ((testbed == y)); then
-    # Clone an initialize the repo
-    
-    git clone https://github.com/assuremoss/Kubernetes-testbed.git
-    cd Kubernetes-testbed
-    
-
-# Ask whether to initialize the Kubernetes cluster
-echo -e "${GREEN}Would you like to initialize the Kubernetes cluster?${NC} \n
-1) yes \n
-2) no \n
-enter a choice (y or n) \n"
-
-read cluster
-
-if ((cluster == y)); then
-    # Create the VMs and initialize the cluster
-    echo -e "Running vagrant up --provider ${hypervisor}"
-    echo -e "This may take up to 5 minutes..."
-    vagrant up --provider ${hypervisor}
-
-    echo -e "kubectl get nodes"
-    kubectl get nodes
-
-    echo -e "kubectl get nodes"
-    kubectl cluster-info
 
 
 # Install Dependencies
