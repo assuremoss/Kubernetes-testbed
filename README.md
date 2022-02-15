@@ -60,16 +60,6 @@ The following is an overview of the 3 cluster setups that is possible to create:
 
 The following are the steps needed to deploy a single-master node Kubernetes cluster (for a multi-master nodes cluster, see next section).
 
-#### [Ubuntu] Automatic Installation on Ubuntu
-
-If you'd like to automatically deploy a Kubernetes cluster on a Ubuntu machine, without further customization, you can do so by running the following 3 commands on your host/server:
-
-```bash
-wget https://raw.githubusercontent.com/assuremoss/Kubernetes-testbed/main/ubuntu_dependencies
-chmod +x ubuntu_dependencies
-./ubuntu_dependencies
-```
-
 #### 1. Customize the Vagrantfile
 
 Within the Vagrantfile, in order, you can specify the number of worker nodes (for single-master node, ignore the N_M_NODES field), and the CNI network plugin to use (Calico, Cilium, Weave, or Flannel). It is recommended not to change the Ubuntu server image.
