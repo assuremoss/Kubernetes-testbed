@@ -1,22 +1,22 @@
 # Kubernetes playground platform
 
-The objective of this Kubernetes playground platform is to provide a production-like Kubernetes cluster that can be installed either on personal computers and servers. In particular, it allows creating clusters with a single master node, multi-master nodes, and an external etcd cluster, besides choosing the container runtime and CNI to be used within the cluster.
+The objective of this Kubernetes playground platform is to provide a production-like Kubernetes cluster that can be installed either on personal computers or servers. In particular, it allows creating clusters with a single master node, and multi-master nodes, besides choosing the container runtime and CNI to be used within the cluster.
 
 The cluster is spun up using Vagrant, Ansible, and kubeadm.
- - Vagrant is used to create the virtual (using Virtualbox or KVM) masters and workers nodes.
+ - Vagrant is used to creating the virtual (using Virtualbox, KVM, VMware) masters and workers nodes.
  - Ansible is used to automate a basic software configuration for each node (e.g. installing kubeadm).
  - kubeamd is finally used to bootstrap the Kubernetes nodes (i.e. installing the kube-api-server, kubelet, etc.)
 
 
 ## Supported Platforms
 
-The following OS are currently supported:
+The following OSs are currently supported:
 
- - Ubuntu Desktop OS with Virtualbox or libvirt (tested on Ubuntu 20.04 LTS).
+ - Ubuntu Desktop OS with Virtualbox, VMware Workstation or libvirt (tested on Ubuntu 20.04 LTS).
  - Ubuntu Server OS with libvirt (tested on Ubuntu 20.04 LTS).
- - macOS with VirtualBox (tested on macOS Big Sur Version 11.5.2).
+ - macOS with VirtualBox or VMware Fusion (tested on macOS Big Sur Version 11.5.2).
 
-If you wish to add more sopported platforms, open a Github issue.
+If you wish to add more supported platforms, open a Github issue.
 
 
 ## Hardware Requirements
@@ -32,17 +32,20 @@ This testbed can be executed either on a Ubuntu or macOS machine. Windows is not
  - kubectl [For installation: https://kubernetes.io/docs/tasks/tools/]
  - Vagrant [For installation: https://www.vagrantup.com/downloads]
  - [Optional] Install a plugin to allow copying files from the Host OS to the Guest OS and viceversa: 
-     - $ vagrant plugin install vagrant-vbguest
+     - $ vagrant plugin install vagrant-vbguest [optional]
      - $ vagrant plugin install vagrant-scp
+     - $ vagrant plugin install vagrant-vmware-desktop [optional]
      - $ vagrant reload
  - Ansible [For installation: https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html]
+ 
  - Virtualbox [For installation: https://www.virtualbox.org/wiki/Downloads]
+ - VMware Fusion [For installation: https://www.vagrantup.com/docs/providers/vmware]
  - KVM [For installation: execute the ubuntu_dependencies file in this repository]
 
 
 ## Installation Overview
 
-The current settings allow you to set up a Kubernetes cluster of 1 or more master nodes, and N worker nodes (they should be maximum 9). Both the hardware requirements of the master and worker nodes can be customized, specifying the CPU, RAM, and network subnets for each virtual machine. Similarly, the Kubernetes and other components version can be specified in the Ansible provision files.
+The current settings allow you to set up a Kubernetes cluster of 1 or more master nodes, and N worker nodes (they should be a maximum of 9). Both the hardware requirements of the master and worker nodes can be customized, specifying the CPU, RAM, and network subnets for each virtual machine. Similarly, the Kubernetes and other components version can be specified in the Ansible provision files.
 
 In the Vagrantfile, you can specify which container run-time engine you'd like to use. At the moment, you can choose between Docker, containerd, and CRI-O.
 
@@ -57,6 +60,16 @@ The following is an overview of the 3 cluster setups that is possible to create:
 
 The following are the steps needed to deploy a single-master node Kubernetes cluster (for a multi-master nodes cluster, see next section).
 
+#### [Ubuntu] Automatic Installation on Ubuntu
+
+If you'd like to automatically deploy a Kubernetes cluster on a Ubuntu machine, without further customization, you can do so by running the following 3 commands on your host/server:
+
+```bash
+wget https://github.com/assuremoss/Kubernetes-testbed/blob/main/ubuntu_dependencies
+chmod +x ubuntu_dependencies
+./ubuntu_dependencies
+```
+
 #### 1. Customize the Vagrantfile
 
 Within the Vagrantfile, in order, you can specify the number of worker nodes (for single-master node, ignore the N_M_NODES field), and the CNI network plugin to use (Calico, Cilium, Weave, or Flannel). It is recommended not to change the Ubuntu server image.
@@ -66,7 +79,7 @@ Within the Vagrantfile, in order, you can specify the number of worker nodes (fo
 From the Kubernetes testbed folder, run the following: 
 
 ```bash
-vagrant up --provider virtualbox/libvirt 
+vagrant up --provider virtualbox/vmware_desktop/libvirt 
 ```
 
 Once the installation is over, Kubernetes will be successfully installed. 
@@ -93,7 +106,7 @@ For each master node, insert a line like `server <master-node-N-IP>:6443;`.
 From the Kubernetes testbed folder, run the following: 
 
 ```bash
-vagrant up --provider virtualbox/libvirt 
+vagrant up --provider virtualbox/vmware_desktop/libvirt 
 ```
 
 Once the installation is over, Kubernetes will be successfully installed. 
@@ -236,6 +249,9 @@ kubectl apply -f https://download.elastic.co/downloads/eck/1.7.1/operator.yaml
 Quickstart: https://www.elastic.co/guide/en/cloud-on-k8s/1.7/k8s-quickstart.html
 
 
+#### PiggyMetrics Application
+
+
 ## Application Examples
 
 The following are some application examples that can be deployed on the cluster: 
@@ -249,6 +265,16 @@ Other applications are available on Github: TrainTicket, Spring PetClinic, Sock 
 
 
 ## Installation Issues
+
+
+### VMware Fusion on macOS - Vagrant failed to create a new VMware networking device.
+
+"The latest releases of the Vagant VMware desktop plugin and the Vagrant VMware utility include updates for macOS 11 (Big Sur). However, due to port forwarding functionality not being available within Fusion 12, port forwards will not be functional. This also impacts the Vagrant communicator as it attempts to connect to the guest via the port forward on the loopback. To resolve this, add this to the Vagrantfile:"
+
+```bash
+v.ssh_info_public = true
+```
+https://discuss.hashicorp.com/t/vagrant-up-stuck-on-network-setup-with-vmware-provider-on-macos-11/14992/7
 
 
 ### Add-ons installation failures

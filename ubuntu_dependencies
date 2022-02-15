@@ -61,6 +61,43 @@ fi
 
 echo -e "${GREEN}Installing dependencies...${NC}"
 
+
+# Ask whether to download the Testbed's repository
+echo -e "${GREEN}Would you like to download the Testbed's repository?${NC} \n
+1) yes \n
+2) no \n
+enter a choice (y or n) \n"
+
+read testbed
+
+if ((testbed == y)); then
+    # Clone an initialize the repo
+    
+    git clone https://github.com/assuremoss/Kubernetes-testbed.git
+    cd Kubernetes-testbed
+    
+
+# Ask whether to initialize the Kubernetes cluster
+echo -e "${GREEN}Would you like to initialize the Kubernetes cluster?${NC} \n
+1) yes \n
+2) no \n
+enter a choice (y or n) \n"
+
+read cluster
+
+if ((cluster == y)); then
+    # Create the VMs and initialize the cluster
+    echo -e "Running vagrant up --provider ${hypervisor}"
+    echo -e "This may take up to 5 minutes..."
+    vagrant up --provider ${hypervisor}
+
+    echo -e "kubectl get nodes"
+    kubectl get nodes
+
+    echo -e "kubectl get nodes"
+    kubectl cluster-info
+
+
 # Install Dependencies
 sudo apt install -y ansible 
 ansible-galaxy collection install community.kubernetes
