@@ -12,7 +12,7 @@ GREEN='\033[0;32m'
 NC='\033[0m' # no Color
 
 # Make sure it's a Linux machine 
-if ! [ -f /etc/lsb-release ]; then
+if ! (( -f /etc/lsb-release )); then
     echo -e "${RED}This script must be run on a Ubuntu machine! Exit...${NC}"
     exit 1
 fi
@@ -34,18 +34,18 @@ enter a choice (1 or 2) \n"
 
 read hypervisor
 
-if ((hypervisor == 1)); then
+if [ $hypervisor == 1 ]; then
     # Skip for VirtualBox
     echo ""
 
-elif ((hypervisor == 2)); then
+elif [ $hypervisor == 2 ]; then
     # Package to check kvm-system compatibility
     sudo apt install -y cpu-checker 
 
     minimum=0
     found=$(egrep -c '(vmx|svm)' /proc/cpuinfo)
 
-    if ((found > minimum)); then
+    if [ $found > $minimum ]; then
         echo -e "${GREEN}KVM is supported! Continue installation...${NC}"
     else
         echo -e "${RED}KVM is not supported! Exit...${NC}"
@@ -70,9 +70,8 @@ enter a choice (y or n) \n"
 
 read testbed
 
-if ((testbed == y)); then
-    # Clone an initialize the repo
-    
+# Clone an initialize the repo
+if [ $testbed == "y" ]; then
     git clone https://github.com/assuremoss/Kubernetes-testbed.git
     cd Kubernetes-testbed
     
@@ -85,7 +84,14 @@ enter a choice (y or n) \n"
 
 read cluster
 
-if ((cluster == y)); then
+if [ $cluster == "y" ]; then
+
+    if [ $hypervisor == 1 ] then
+        hypervisor = "virtualbox"
+
+    elif [ $hypervisor == 2 ] then
+        hypervisor = "libvirt"
+
     # Create the VMs and initialize the cluster
     echo -e "Running vagrant up --provider ${hypervisor}"
     echo -e "This may take up to 5 minutes..."

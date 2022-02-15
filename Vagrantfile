@@ -9,7 +9,7 @@ IMAGE_NAME = "generic/ubuntu2004"
 N_M_NODES = 1
 
 # Number of workers nodes (should be at maximum 9)
-N_W_NODES = 1
+N_W_NODES = 2
 
 # Container RunTime Engine selection
 # Docker=1, containerd=2, CRI-O=3
