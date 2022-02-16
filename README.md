@@ -113,11 +113,14 @@ For this option, the vagrant scp plugin is needed (how-to in the previous "Softw
 ```bash
 vagrant ssh master-node-1
 sudo cat /etc/kubernetes/admin.conf > admin.conf
+hostname -I
 ```
 
-Log out from the guest and run the following (user: vagrant, password: vagrant):
+Write down the master-node IP Address, starting with: 172.16.3.
+
+Log out from the guest VM and run the following from the host (user: vagrant, password: vagrant):
 ```bash
-scp -o StrictHostKeyChecking=no vagrant@<master-node-ip>:admin.conf .
+sudo scp -o StrictHostKeyChecking=no vagrant@<master-node-ip>:admin.conf .
 kubectl --kubeconfig ./admin.conf get nodes
 ```
 
@@ -161,6 +164,8 @@ Finally, at the end of the installation, we can check that our cluster is up and
 kubectl get nodes
 kubectl cluster-info
 ```
+
+If you wish to assign __roles_ to worker nodes as well, run the following command: `kubectl label node worker-node-X node-role.kubernetes.io/worker=worker`.
 
 For more commands, to retrieve information about pods, services, and other K8s objects check: https://kubernetes.io/docs/reference/kubectl/cheatsheet/
 
@@ -239,9 +244,6 @@ kubectl apply -f https://download.elastic.co/downloads/eck/1.7.1/operator.yaml
 Quickstart: https://www.elastic.co/guide/en/cloud-on-k8s/1.7/k8s-quickstart.html
 
 
-#### PiggyMetrics Application
-
-
 ## Application Examples
 
 The following are some application examples that can be deployed on the cluster: 
@@ -255,6 +257,44 @@ Other applications are available on Github: TrainTicket, Spring PetClinic, Sock 
 
 
 ## Installation Issues
+
+
+### Ubuntu/libvirt 
+
+#### Name Kubernetes-testbed_master-node-1 of domain about to create is already taken.
+
+This error is due to prior installation using libvirt for the VMs. To resolve this, it is enough to destroy previously created VMs with the following command:
+```bash
+virsh destroy VM_NAME
+virsh undefine VM_NAME
+```
+
+Also, remember to destroy the previous Vagrant installation with: `vagrant destroy`, before deploying the new cluster.
+
+For more commands, check out [6].
+
+#### Volume for domain is already created.
+
+This error is due to prior installation using libvirt for the VMs. To resolve this, it is enough to destroy previously created VM volumes with the following command:
+```bash
+virsh vol-list default
+
+virsh vol-delete VOL_NAME default
+```
+
+Also, remember to destroy the previous Vagrant installation with: `vagrant destroy`, before deploying the new cluster.
+
+#### Address x.x.x.x does not match with network name libvirt-.-.
+
+This error is due to prior installation using libvirt for the VMs. To resolve this, it is enough to destroy previously created networks with the following command:
+```bash
+virsh net-list --all
+
+virsh net-destroy NET_NAME
+virsh net-undefine NET_NAME
+```
+
+Also, remember to destroy the previous Vagrant installation with: `vagrant destroy`, before deploying the new cluster.
 
 
 ### VMware Fusion on macOS - Vagrant failed to create a new VMware networking device.
@@ -350,3 +390,5 @@ nc -v localhost 6443
  [3] https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
 
  [4] https://octetz.com/docs/2019/2019-03-26-ha-control-plane-kubeadm/
+
+ [5] https://www.cyberciti.biz/faq/howto-linux-delete-a-running-vm-guest-on-kvm/
