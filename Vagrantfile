@@ -53,6 +53,7 @@ Vagrant.configure("2") do |config|
                 ansible.compatibility_mode = "2.0"
                 ansible.playbook = "ansible-playbooks/load-balancer.yml"
                 ansible.extra_vars = {
+                    user: "vagrant",
                     hostname: "load-balancer",
                     node_ip: "172.16.3.5",
                     ansible_python_interpreter:"/usr/bin/python3"
@@ -69,6 +70,7 @@ Vagrant.configure("2") do |config|
             ansible.compatibility_mode = "2.0"
             ansible.playbook = "ansible-playbooks/master-playbook.yml"
             ansible.extra_vars = {
+                user: "vagrant",
                 n_m_nodes: N_M_NODES,
                 n_w_nodes: N_W_NODES,
                 hostname: "master-node-1",
@@ -91,6 +93,7 @@ Vagrant.configure("2") do |config|
                 ansible.compatibility_mode = "2.0"
                 ansible.playbook = "ansible-playbooks/master-replica-playbook.yml"
                 ansible.extra_vars = {
+                    user: "vagrant",
                     n_m_nodes: N_M_NODES,
                     n_w_nodes: N_W_NODES,
                     hostname: "master-node-#{i}",
@@ -112,6 +115,7 @@ Vagrant.configure("2") do |config|
                 ansible.compatibility_mode = "2.0"
                 ansible.playbook = "ansible-playbooks/worker-node.yml"
                 ansible.extra_vars = {
+                    user: "vagrant",
                     hostname: "worker-node-#{i}",
                     node_ip: "172.16.3.#{i + 99}",
                     c_eng: c_eng,

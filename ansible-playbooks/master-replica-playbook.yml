@@ -44,9 +44,9 @@
       - containerd.io=1.4.6-1
     when: c_eng == 1
       
-  - name: Add vagrant user to docker group
+  - name: Add user to docker group
     user:
-      name: vagrant
+      name: "{{ user }}"
       group: docker
     when: c_eng == 1
   
@@ -289,17 +289,17 @@
   - name: Multi-master node join command
     command: sh /tmp/join-command.sh
 
-  - name: Setup kubeconfig for vagrant user
+  - name: Setup kubeconfig for user
     command: "{{ item }}"
     with_items:
-     - mkdir -p /home/vagrant/.kube
-     - cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
-     - chown vagrant:vagrant /home/vagrant/.kube/config
+     - "mkdir -p /home/{{ user }}/.kube"
+     - "cp -i /etc/kubernetes/admin.conf /home/{{ user }}/.kube/config"
+     - "chown {{ user }}:{{ user }} /home/{{ user }}/.kube/config"
 
   - name: Install Helm package manager (1/2)
     get_url:
       url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
-      dest: /home/vagrant/get_helm.sh
+      dest: "/home/{{ user }}/get_helm.sh"
       mode: '0700'
     retries: 3  
     ignore_errors: yes

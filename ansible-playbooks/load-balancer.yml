@@ -46,9 +46,9 @@
       - docker-ce-cli=5:20.10.7~3-0~ubuntu-xenial
       - containerd.io=1.4.6-1
       
-  - name: Add vagrant user to docker group
+  - name: Add user to docker group
     user:
-      name: vagrant
+      name: "{{ user }}"
       group: docker
   
   - name: Set Docker cgroup driver to systemd
