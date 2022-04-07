@@ -275,15 +275,15 @@
       mode: '0700'
 
   - name: Change join command to join the master node
-    shell: echo $(cat /tmp/join-command) --control-plane --certificate-key $(cut -c225-288 /tmp/join-command-master) --apiserver-advertise-address {{ node_ip }} > /tmp/join-command.sh
+    shell: echo $(cat /tmp/join-command) --control-plane --certificate-key $(cat /tmp/join-command-master) --apiserver-advertise-address {{ node_ip }} > /tmp/join-command.sh
     when: c_eng | int == 1
 
   - name: Change join command to join the master node
-    shell: echo $(cat /tmp/join-command) --control-plane --certificate-key $(cut -c225-288 /tmp/join-command-master) --apiserver-advertise-address {{ node_ip }} --cri-socket=/run/containerd/containerd.sock > /tmp/join-command.sh
+    shell: echo $(cat /tmp/join-command) --control-plane --certificate-key $(cat /tmp/join-command-master) --apiserver-advertise-address {{ node_ip }} --cri-socket=/run/containerd/containerd.sock > /tmp/join-command.sh
     when: c_eng | int == 2
 
   - name: Change join command to join the master node
-    shell: echo $(cat /tmp/join-command) --control-plane --certificate-key $(cut -c225-288 /tmp/join-command-master) --apiserver-advertise-address {{ node_ip }} --cri-socket=/var/run/crio/crio.sock > /tmp/join-command.sh
+    shell: echo $(cat /tmp/join-command) --control-plane --certificate-key $(cat /tmp/join-command-master) --apiserver-advertise-address {{ node_ip }} --cri-socket=/var/run/crio/crio.sock > /tmp/join-command.sh
     when: c_eng | int == 3
 
   - name: Multi-master node join command
