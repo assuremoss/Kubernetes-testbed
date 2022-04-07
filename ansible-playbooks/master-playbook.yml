@@ -44,9 +44,9 @@
       - containerd.io=1.4.6-1
     when: c_eng | int == 1
       
-  - name: Add vagrant user to docker group
+  - name: Add user to docker group
     user:
-      name: vagrant
+      name: "{{ user }}"
       group: docker
     when: c_eng | int == 1
   
@@ -294,12 +294,12 @@
     command: kubeadm init --control-plane-endpoint 172.16.3.5 --upload-certs --cri-socket=/var/run/crio/crio.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
     when: c_eng | int == 3 and n_m_nodes | int > 1
 
-  - name: Setup kubeconfig for vagrant user
+  - name: Setup kubeconfig for user
     command: "{{ item }}"
     with_items:
-     - mkdir -p /home/vagrant/.kube
-     - cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
-     - chown vagrant:vagrant /home/vagrant/.kube/config
+     - "mkdir -p /home/{{ user }}/.kube"
+     - "cp -i /etc/kubernetes/admin.conf /home/{{ user }}/.kube/config"
+     - "chown {{ user }}:{{ user }} /home/{{ user }}/.kube/config"
 
 # Allow pods to run on the master node in case there are no worker nodes
   - name: Allow pods to run on the master node
@@ -367,7 +367,7 @@
   - name: Install Helm package manager (1/2)
     get_url:
       url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
-      dest: /home/vagrant/get_helm.sh
+      dest: "/home/{{ user }}/get_helm.sh"
       mode: '0700'
     retries: 3  
     ignore_errors: yes

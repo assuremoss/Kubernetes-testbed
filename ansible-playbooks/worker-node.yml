@@ -44,9 +44,9 @@
       - containerd.io=1.4.6-1
     when: c_eng | int == 1
       
-  - name: Add vagrant user to docker group
+  - name: Add user to docker group
     user:
-      name: vagrant
+      name: "{{ user }}"
       group: docker
     when: c_eng | int == 1
   
