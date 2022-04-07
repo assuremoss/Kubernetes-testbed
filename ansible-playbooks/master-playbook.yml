@@ -361,7 +361,7 @@
 
   - name: Copy join-command for other master nodes
     become: false
-    local_action: copy content="{{ join_command_master }}" dest="./join-command-master"
+    local_action: copy content="{{ join_command_master.stdout_lines[-1] }}" dest="./join-command-master"
     when: n_m_nodes | int > 1
 
   - name: Install Helm package manager (1/2)
