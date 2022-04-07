@@ -22,13 +22,13 @@
     apt_key:
       url: https://download.docker.com/linux/ubuntu/gpg
       state: present
-    when: c_eng == 1
+    when: c_eng | int == 1
 
   - name: Add apt repository for stable version
     apt_repository:
       repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
       state: present
-    when: c_eng == 1
+    when: c_eng | int == 1
 
 # Specify Docker version
 # To list the available versions in the repo run # apt-cache madison docker-ce
@@ -42,13 +42,13 @@
       - docker-ce=5:20.10.7~3-0~ubuntu-xenial
       - docker-ce-cli=5:20.10.7~3-0~ubuntu-xenial
       - containerd.io=1.4.6-1
-    when: c_eng == 1
+    when: c_eng | int == 1
       
   - name: Add vagrant user to docker group
     user:
       name: vagrant
       group: docker
-    when: c_eng == 1
+    when: c_eng | int == 1
   
   - name: Set Docker cgroup driver to systemd
     blockinfile:
@@ -63,14 +63,14 @@
           },
           "storage-driver": "overlay2"
         }
-    when: c_eng == 1
+    when: c_eng | int == 1
 
   - name: Delete Ansible marker in /etc/docker/daemon.json
     lineinfile:
       path: /etc/docker/daemon.json
       regexp: "ANSIBLE" 
       state: absent
-    when: c_eng == 1
+    when: c_eng | int == 1
 
 # containerd
   - name: Set-up containerd prerequisites
@@ -87,7 +87,7 @@
       net.bridge.bridge-nf-call-ip6tables = 1
       EOF
       sudo sysctl --system
-    when: c_eng == 2
+    when: c_eng | int == 2
 
   - name: Install containerd
     shell: |
@@ -98,7 +98,7 @@
       
       sudo systemctl daemon-reload
       sudo systemctl start containerd
-    when: c_eng == 2
+    when: c_eng | int == 2
 
 # CRI-O
   - name: Set-up CRI-O prerequisites
@@ -115,7 +115,7 @@
       net.bridge.bridge-nf-call-ip6tables = 1
       EOF
       sudo sysctl --system
-    when: c_eng == 3
+    when: c_eng | int == 3
 
   - name: Add CRI-O repositories
     shell: |
@@ -125,7 +125,7 @@
       echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
       echo "deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$VERSION.list
     
-    when: c_eng == 3 
+    when: c_eng | int == 3 
 
   - name: Add CRI-O repository key
     shell: |
@@ -134,7 +134,7 @@
 
       curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:$VERSION/$OS/Release.key | apt-key add -
       curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/Release.key | apt-key add -
-    when: c_eng == 3 
+    when: c_eng | int == 3 
 
   - name: Install CRI-O
     apt: 
@@ -145,34 +145,34 @@
       packages:
       - cri-o
       - cri-o-runc
-    when: c_eng == 3
+    when: c_eng | int == 3
       
   - name: Enable CRI-O service
     shell: |
       sudo systemctl daemon-reload
       sudo systemctl enable crio --now
-    when: c_eng == 3
+    when: c_eng | int == 3
 
   - name: Use cgroup driver for CRI-O 1/2
     ansible.builtin.lineinfile:
       path: /etc/crio/crio.conf
       regexp: '^conmon_cgroup ='
       line: conmon_cgroup = "pod"
-    when: c_eng == 3
+    when: c_eng | int == 3
 
   - name: Use cgroup driver for CRI-O 2/2
     ansible.builtin.lineinfile:
       path: /etc/crio/crio.conf
       regexp: '^cgroup_manager = "systemd"'
       line: cgroup_manager = "cgroupfs"
-    when: c_eng == 3
+    when: c_eng | int == 3
 
   - name: Restart crio
     service:
       name: crio
       daemon_reload: yes
       state: restarted
-    when: c_eng == 3
+    when: c_eng | int == 3
 
   - name: Remove swapfile from /etc/fstab
     mount:
@@ -231,7 +231,7 @@
       systemctl enable docker
       systemctl daemon-reload
       systemctl restart docker
-    when: c_eng == 1
+    when: c_eng | int == 1
 
   - name: Create systemd file for containerd
     blockinfile:
@@ -240,21 +240,21 @@
       block: |
         [Service]
         Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --runtime-request-timeout=15m --container-runtime-endpoint=unix:///run/containerd/containerd.sock"
-    when: c_eng == 2 
+    when: c_eng | int == 2 
 
   - name: Delete Ansible marker in 0-containerd.conf
     lineinfile:
       path: /etc/systemd/system/kubelet.service.d/0-containerd.conf
       regexp: "ANSIBLE" 
       state: absent
-    when: c_eng == 2
+    when: c_eng | int == 2
 
   - name: Restart containerd
     service:
       name: containerd
       daemon_reload: yes
       state: restarted
-    when: c_eng == 2 
+    when: c_eng | int == 2 
 
   - name: Restart kubelet
     service:
@@ -266,33 +266,33 @@
 # Kubernetes Master node bootstrap with kubeadm and Docker
   - name: Initialize the Kubernetes cluster using kubeadm and Docker
     command: kubeadm init --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
-    when: c_eng == 1 and n_m_nodes == 1
+    when: c_eng | int == 1 and n_m_nodes | int == 1
 
 # Kubernetes Master node bootstrap with kubeadm and containerd
   - name: Initialize the Kubernetes cluster using kubeadm and containerd
     command: kubeadm init --cri-socket=/run/containerd/containerd.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
-    when: c_eng == 2 and n_m_nodes == 1
+    when: c_eng | int == 2 and n_m_nodes | int == 1
 
 # Kubernetes Master node bootstrap with kubeadm and CRI-O
   - name: Initialize the Kubernetes cluster using kubeadm and CRI-O
     command: kubeadm init --cri-socket=/var/run/crio/crio.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
-    when: c_eng == 3 and n_m_nodes == 1
+    when: c_eng | int == 3 and n_m_nodes | int == 1
 
 ### Multi-master cluster ###
 # Kubernetes Master nodes bootstrap with kubeadm and Docker
   - name: Initialize the Kubernetes cluster using kubeadm and Docker
     command: kubeadm init --control-plane-endpoint 172.16.3.5 --upload-certs --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
-    when: c_eng == 1 and n_m_nodes > 1
+    when: c_eng | int == 1 and n_m_nodes | int > 1
 
 # Kubernetes Master nodes bootstrap with kubeadm and containerd
   - name: Initialize the Kubernetes cluster using kubeadm and containerd
     command: kubeadm init --control-plane-endpoint 172.16.3.5 --upload-certs --cri-socket=/run/containerd/containerd.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
-    when: c_eng == 2 and n_m_nodes > 1
+    when: c_eng | int == 2 and n_m_nodes | int > 1
 
 # Kubernetes Master nodes bootstrap with kubeadm and CRI-O
   - name: Initialize the Kubernetes cluster using kubeadm and CRI-O
     command: kubeadm init --control-plane-endpoint 172.16.3.5 --upload-certs --cri-socket=/var/run/crio/crio.sock --apiserver-advertise-address="{{ node_ip }}" --apiserver-cert-extra-sans="{{ node_ip }}" --node-name {{ hostname }} --pod-network-cidr=192.168.0.0/16
-    when: c_eng == 3 and n_m_nodes > 1
+    when: c_eng | int == 3 and n_m_nodes | int > 1
 
   - name: Setup kubeconfig for vagrant user
     command: "{{ item }}"
@@ -304,7 +304,7 @@
 # Allow pods to run on the master node in case there are no worker nodes
   - name: Allow pods to run on the master node
     command: kubectl taint nodes --all node-role.kubernetes.io/master-
-    when: n_w_nodes == 0
+    when: n_w_nodes | int == 0
 
 # Install the CNI network plugin
 
@@ -315,7 +315,7 @@
     shell: |
       kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
       kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
-    when: cni == 1
+    when: cni | int == 1
 
 # Cilium
   - name: Install Cilium CNI plugin
@@ -323,7 +323,7 @@
     retries: 3  
     shell: |
       kubectl create -f https://raw.githubusercontent.com/cilium/cilium/v1.9/install/kubernetes/quick-install.yaml
-    when: cni == 2
+    when: cni | int == 2
 
 # Weawe
 # IMPORTANT: only for Kubernetes v1.6+
@@ -333,7 +333,7 @@
     retries: 3  
     shell: |
       kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
-    when: cni == 3
+    when: cni | int == 3
 
 # Flannel
 # IMPORTANT: only for Kubernetes v1.17+
@@ -342,7 +342,7 @@
     retries: 3  
     shell: |
       kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-    when: cni == 4
+    when: cni | int == 4
 
 # Generate join command for worker nodes
   - name: Generate join command
@@ -357,12 +357,12 @@
   - name: Generate join-command for other master nodes
     command: kubeadm init phase upload-certs --upload-certs
     register: join_command_master
-    when: n_m_nodes > 1
+    when: n_m_nodes | int > 1
 
   - name: Copy join-command for other master nodes
     become: false
     local_action: copy content="{{ join_command_master }}" dest="./join-command-master"
-    when: n_m_nodes > 1
+    when: n_m_nodes | int > 1
 
   - name: Install Helm package manager (1/2)
     get_url:
